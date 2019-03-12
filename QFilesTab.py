@@ -7,9 +7,6 @@ from SqlConnection import DqConnection
 import pyodbc
 
 
-'''do edycji central widget, podpiąc trzeba te chujostwo
-w jednego boxa ( zkierunkami)'''
-
 class Files(QtWidgets.QWidget):
     def __init__(self, parent = None):
         super(Files, self).__init__(parent)
