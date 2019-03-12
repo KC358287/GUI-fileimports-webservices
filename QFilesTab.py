@@ -11,8 +11,8 @@ import pyodbc
 w jednego boxa ( zkierunkami)'''
 
 class Files(QtWidgets.QWidget):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent = None):
+        super(Files, self).__init__(parent)
         self.layout_init()
 
     def layout_init(self):
@@ -62,22 +62,24 @@ class Files(QtWidgets.QWidget):
         ### panel
         vgroupbox = QtWidgets.QGroupBox('Options')
         pgroupbox = QtWidgets.QGroupBox('Partners')
-        pgroupbox.setLayout(self.pvbox)
+
         mainpanel = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.LeftToRight)
-        variantpanel = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.TopToBottom,self)
+        variantpanel = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.TopToBottom)
         variantpanel.addWidget(self.variants)
         variantpanel.addWidget(self.textbox)
         variantpanel.addWidget(self.pb)
         variantpanel.addWidget(self.clearbutton)
+
         mainpanel.addWidget(pgroupbox)
-        vgroupbox.setLayout(variantpanel)
         mainpanel.addWidget(vgroupbox)
+        vgroupbox.setLayout(variantpanel)
+        pgroupbox.setLayout(self.pvbox)
 
         ###connect all
         grid = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.TopToBottom, self)
-        self.setLayout(grid)
         grid.addLayout(mainpanel)
         grid.addWidget(self.tablewidget)
+        self.setLayout(grid)
 
     def update_textbox(self, text):
         self.textbox.clear()
@@ -182,8 +184,8 @@ class Files(QtWidgets.QWidget):
         self.tablewidget.sortItems(0, order=QtCore.Qt.DescendingOrder)
 
     def sql_query(self):
-        ser = '####'
-        base = '####'
+        ser = '10.96.6.14'
+        base = 'PROD_WAREX2'
         imei = '%' + self.textbox.text() + '%'
         username, pwd = self._credentials
         self.clear_items()
