@@ -10,9 +10,9 @@ import qdarkstyle
 
 
 
-class MainWindow(QtWidgets.QMainWindow,QtWidgets.QDialog):
-    def __init__(self, parent=None):
-        super(MainWindow,self).__init__(parent)
+class MainWindow(QtWidgets.QMainWindow):
+    def __init__(self):
+        super(MainWindow,self).__init__()
 
         self.main_frame()
         self.center() #center frame
@@ -25,13 +25,12 @@ class MainWindow(QtWidgets.QMainWindow,QtWidgets.QDialog):
 
 
     def main_frame(self):
+
         ### actions on meenubar
         exitAct = QtWidgets.QAction('&Exit', self, shortcut='Ctrl+Q', statusTip='Exit application')
         exitAct.triggered.connect(self.close)
-
         moreinfo = QtWidgets.QAction('&Help', self, statusTip='More information')
         moreinfo.triggered.connect(self.information)
-
 
         ### menubar
         menubar = self.menuBar()
