@@ -7,25 +7,16 @@ from QWebservicesTab import Webservices
 import qdarkstyle
 
 
-
-
-
 class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self):
-        super(MainWindow,self).__init__()
+    def __init__(self, parent = None):
+        super(MainWindow,self).__init__(parent)
 
-        self.main_frame()
-        self.center() #center frame
+        self.task_bar()
+        self.tab_layout()
+        self.graph_elements()
+        self.center()
 
-        self.tabwidget = QtWidgets.QTabWidget()
-        self.tabwidget.addTab(Files(), 'Files Import')
-        self.tabwidget.addTab(Webservices(), 'Webservice')
-
-        self.setCentralWidget(self.tabwidget)
-
-
-    def main_frame(self):
-
+    def task_bar(self):
         ### actions on meenubar
         exitAct = QtWidgets.QAction('&Exit', self, shortcut='Ctrl+Q', statusTip='Exit application')
         exitAct.triggered.connect(self.close)
@@ -39,10 +30,17 @@ class MainWindow(QtWidgets.QMainWindow):
         fileMenu = menubar.addMenu('&Help')
         fileMenu.addAction(moreinfo)
 
+    def graph_elements(self):
         ### basic geometry and color
         self.setWindowTitle('Villain')
         self.setWindowIcon(QtGui.QIcon('dc1.png'))
         self.setStyleSheet((qdarkstyle.load_stylesheet_pyqt5()))
+
+    def tab_layout(self):
+        self.tabwidget = QtWidgets.QTabWidget()
+        self.tabwidget.addTab(Files(), 'Files Import')
+        self.tabwidget.addTab(Webservices(), 'Webservice')
+        self.setCentralWidget(self.tabwidget)
 
     ### center main window
     def center(self):
