@@ -29,11 +29,13 @@ class Webservices(QtWidgets.QWidget):
         ### buttons
         self.pb = QtWidgets.QPushButton(self.tr('Run process'))
         self.pb.setDisabled(True)
-        #self.textbox.textChanged.connect(self.disableButton)
+        self.textbox_f.textChanged.connect(self.disableButton)
+        self.textbox_nf.textChanged.connect(self.disableButton)
         #self.pb.clicked.connect(self.on_clicked_pb)
         self.clearbutton = QtWidgets.QPushButton(self.tr('Clear all'))
         self.clearbutton.setDisabled(True)
-        #self.clearbutton.clicked.connect(self.on_clicked_clear)
+        self.clearbutton.clicked.connect(self.on_clicked_clear)
+
 
         searchpanel_f = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.TopToBottom)
         searchpanel_f.addWidget(self.name_f)
@@ -53,11 +55,28 @@ class Webservices(QtWidgets.QWidget):
         topbot.addWidget(self.clearbutton)
         wgroupbox.setLayout(topbot)
 
-
         grid = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.TopToBottom, self)
         grid.addWidget(wgroupbox)
         grid.addWidget(self.tablewidget)
         self.setLayout(grid)
+
+    @QtCore.pyqtSlot()
+    def disableButton(self):
+        if self.textbox_f.text():
+            val = bool(self.textbox_f.text())
+        else:
+            val = bool(self.textbox_nf.text())
+        self.pb.setDisabled(not val)
+        self.clearbutton.setDisabled(not val)
+
+    @QtCore.pyqtSlot()
+    def on_clicked_clear(self):
+        if self.textbox_f.text():
+            self.textbox_f.clear()
+        elif self.textbox_nf.text():
+            self.textbox_nf.clear()
+        self.tablewidget.setRowCount(0)
+        self.tablewidget.setColumnWidth(3, 200)
 
 
 
