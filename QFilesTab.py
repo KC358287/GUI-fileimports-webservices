@@ -18,11 +18,15 @@ class Files(QtWidgets.QWidget):
                     'REGON', 'Nazwisko', 'Nazwa firmy']
         ###partners
         self.pvbox = QtWidgets.QVBoxLayout()
+        self.buttongroup = QtWidgets.QButtonGroup(self)
         for elements, forms in enumerate(operator):
             element = str(forms)
             self.partners = QtWidgets.QRadioButton(element)
-            self.pvbox.addWidget(self.partners)
-        self.partners.toggled.connect(self.on_itemSelected)
+            self.buttongroup.addButton(self.partners, )
+            self.pvbox.addWidget(self.partners,)
+        self.buttongroup.buttonClicked.connect(self.on_itemSelected)
+        self.buttongroup.buttonClicked['int'].connect(self.on_itemSelected)
+
 
         ###variants
         self.variants = QtWidgets.QComboBox()
@@ -32,11 +36,8 @@ class Files(QtWidgets.QWidget):
         self.variants.model().item(0).setEnabled(False)
         self.variants.activated.connect(self.update_textbox)
 
-        ###textbox
         self.textbox = QtWidgets.QLineEdit()
 
-
-        ###table output
         self.tablewidget = QtWidgets.QTableWidget()
         self.tablewidget.setColumnCount(5)
         self.tablewidget.setHorizontalHeaderLabels(['FileNameOriginal', 'OrderItemCode', 'Imported','InfoCode', 'Row'])
@@ -46,8 +47,6 @@ class Files(QtWidgets.QWidget):
         self.tablewidget.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
         self.tablewidget.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
 
-
-        ### buttons
         self.pb = QtWidgets.QPushButton(self.tr('Run process'))
         self.pb.setDisabled(True)
         self.textbox.textChanged.connect(self.disableButton)
@@ -56,9 +55,8 @@ class Files(QtWidgets.QWidget):
         self.clearbutton.setDisabled(True)
         self.clearbutton.clicked.connect(self.on_clicked_clear)
 
-        ### panel
         vgroupbox = QtWidgets.QGroupBox('Options')
-        pgroupbox = QtWidgets.QGroupBox('Partners')
+        pgroupbox = QtWidgets.QGroupBox('Partner')
 
         mainpanel = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.LeftToRight)
         variantpanel = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.TopToBottom)
@@ -66,13 +64,13 @@ class Files(QtWidgets.QWidget):
         variantpanel.addWidget(self.textbox)
         variantpanel.addWidget(self.pb)
         variantpanel.addWidget(self.clearbutton)
-
         mainpanel.addWidget(pgroupbox)
         mainpanel.addWidget(vgroupbox)
         vgroupbox.setLayout(variantpanel)
-        pgroupbox.setLayout(self.pvbox)
+        test = QtWidgets.QVBoxLayout(self)
+        test.addLayout(self.pvbox)
+        pgroupbox.setLayout(test)
 
-        ###connect all
         grid = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.TopToBottom, self)
         grid.addLayout(mainpanel)
         grid.addWidget(self.tablewidget)
@@ -96,24 +94,25 @@ class Files(QtWidgets.QWidget):
             regexp = None
         self.textbox.setValidator(QtGui.QRegExpValidator(regexp))
 
+    @QtCore.pyqtSlot(QtWidgets.QAbstractButton)
+    @QtCore.pyqtSlot(int)
     def on_itemSelected(self, index):
-        self.worker = None
-        self.workeradd = None
-        element = self.partners.itemText(index)
-        if element == 'Play':
-            self.worker = 'W2_FileImportWorkerP4'
-            return self.worker
-        elif element == 'TMobile':
-            self.worker = 'W2_FileImportWorkerTmobileFIX'
-            self.workeradd = 'W2_FileImportWorkerTmobile'
+        if isinstance(index, QtWidgets.QAbstractButton):
+            self.worker = None
+            self.workeradd = None
+            element = '{}'.format(index.text())
+            if element == 'Play':
+                self.worker = 'W2_FileImportWorkerP4'
+            elif element == 'TMobile':
+                self.worker = 'W2_FileImportWorkerTmobileFIX'
+                self.workeradd = 'W2_FileImportWorkerTmobile'
+            elif element == 'Orange':
+                self.worker = 'W2_FileImportWorkerOCP'
+            elif element == 'PLK':
+                self.worker = 'W2_FileImportWorkerPLK'
             return self.worker, self.workeradd
-        elif element == 'Orange':
-            self.worker = 'W2_FileImportWorkerOCP'
-            return self.worker
-        elif element == 'PLK':
-            self.worker = 'W2_FileImportWorkerPLK'
-            return self.worker
-
+        elif isinstance(index, int):
+            pass
 
 
     @QtCore.pyqtSlot()
@@ -146,8 +145,8 @@ class Files(QtWidgets.QWidget):
     def on_clicked_clear(self):
         if self.textbox.text():
             self.textbox.clear()
-            self.tablewidget.setRowCount(0)
-            self.tablewidget.setColumnWidth(3, 200)
+        self.tablewidget.setRowCount(0)
+        self.tablewidget.setColumnWidth(3, 200)
 
     def setCredentials(self, credentials):
         self._credentials = credentials
@@ -181,14 +180,13 @@ class Files(QtWidgets.QWidget):
         self.tablewidget.sortItems(0, order=QtCore.Qt.DescendingOrder)
 
     def sql_query(self):
-        ser = '10.96.6.14'
-        base = 'PROD_WAREX2'
+        ser = '10.96.5.17\dqinstance'
         imei = '%' + self.textbox.text() + '%'
         username, pwd = self._credentials
         self.clear_items()
         try:
             self.disablesql()
-            connection = pyodbc.connect(driver='{SQL Server}', server=ser, database=base,
+            connection = pyodbc.connect(driver='{SQL Server}', server=ser,
                                         user=username, password=pwd)
             if self.worker == 'W2_FileImportWorkerTmobileFIX':
                 cursor = connection.cursor()
