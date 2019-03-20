@@ -1,14 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from PyQt5 import QtGui, QtWidgets, QtCore
-from SqlConnection import DqConnection
+from PyQt5 import QtWidgets, QtCore
+from QFilesTab import Files
+import pyodbc
+import threading
 
 
 class Webservices(QtWidgets.QWidget):
     def __init__(self, parent = None):
         super(Webservices, self).__init__(parent)
+        self.files = Files()
         self.layout_init()
+
 
     def layout_init(self):
         self.name_f = QtWidgets.QLabel('Enter fully known value:')
@@ -29,12 +33,12 @@ class Webservices(QtWidgets.QWidget):
         ### buttons
         self.pb = QtWidgets.QPushButton(self.tr('Run process'))
         self.pb.setDisabled(True)
-        self.textbox_f.textChanged.connect(self.disableButton)
-        self.textbox_nf.textChanged.connect(self.disableButton)
+        #self.textbox_f.textChanged.connect(self.disableButton)
+        #self.textbox_nf.textChanged.connect(self.disableButton)
         #self.pb.clicked.connect(self.on_clicked_pb)
         self.clearbutton = QtWidgets.QPushButton(self.tr('Clear all'))
         self.clearbutton.setDisabled(True)
-        self.clearbutton.clicked.connect(self.on_clicked_clear)
+        #self.clearbutton.clicked.connect(self.on_clicked_clear)
 
 
         searchpanel_f = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.TopToBottom)
@@ -60,23 +64,6 @@ class Webservices(QtWidgets.QWidget):
         grid.addWidget(self.tablewidget)
         self.setLayout(grid)
 
-    @QtCore.pyqtSlot()
-    def disableButton(self):
-        if self.textbox_f.text():
-            val = bool(self.textbox_f.text())
-        else:
-            val = bool(self.textbox_nf.text())
-        self.pb.setDisabled(not val)
-        self.clearbutton.setDisabled(not val)
-
-    @QtCore.pyqtSlot()
-    def on_clicked_clear(self):
-        if self.textbox_f.text():
-            self.textbox_f.clear()
-        elif self.textbox_nf.text():
-            self.textbox_nf.clear()
-        self.tablewidget.setRowCount(0)
-        self.tablewidget.setColumnWidth(3, 200)
 
 
 

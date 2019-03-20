@@ -1,7 +1,7 @@
 # -- coding: utf-8 --
 
 from PyQt5.QtWidgets import QLineEdit,QDialogButtonBox,QFormLayout,QDialog,QMessageBox
-from PyQt5 import QtWidgets,QtCore
+from PyQt5 import QtWidgets,QtCore, QtGui
 import qdarkstyle
 import pyodbc
 
@@ -13,7 +13,6 @@ class LoginDialog(QDialog):
 
 
     def init_ui(self):
-
         ### delete question mark
         self.setWindowFlags(self.windowFlags()
                             ^ QtCore.Qt.WindowContextHelpButtonHint)
@@ -36,7 +35,7 @@ class LoginDialog(QDialog):
 
         ### set window title & stylesheet
         self.setWindowTitle('Villain - 10.96.6.14 ')
-        #self.setWindowIcon(QtGui.QIcon('dc1.png'))
+        self.setWindowIcon(QtGui.QIcon('dc1.png'))
         self.setStyleSheet((qdarkstyle.load_stylesheet_pyqt5()))
         ###lock resize
         self.setSizeGripEnabled(False)
@@ -49,13 +48,12 @@ class LoginDialog(QDialog):
 
     ###log by usins sql credentials
     def control(self):
-        ser = '10.96.6.14'
-        base = 'PROD_WAREX2'
+        ser = '10.96.5.17\dqinstance'
         login = self.username.text()
         pwd = self.password.text()
 
         try:
-            self.connection = pyodbc.connect(driver='{SQL Server}', server=ser, database=base,
+            self.connection = pyodbc.connect(driver='{SQL Server}', server=ser,
                          user=login, password=pwd)
             cursor = self.connection.cursor()
             cursor.close()

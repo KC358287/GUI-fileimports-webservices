@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from PyQt5 import QtGui, QtWidgets, QtCore
+from PyQt5 import QtGui, QtWidgets
 from QFilesTab import Files
 from QWebservicesTab import Webservices
 import qdarkstyle
 
 
 class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self, parent = None):
-        super(MainWindow,self).__init__(parent)
+    def __init__(self):
+        super().__init__()
 
         self.task_bar()
         self.tab_layout()
@@ -53,6 +53,10 @@ class MainWindow(QtWidgets.QMainWindow):
         QtWidgets.QMessageBox.information(self,'Information','Version: 2.0\n'\
                                             'Please, contact karol.chojnowski@digitalcaregroup.com for comments and suggestions\n\n'\
                                           'Digital Care - Data Processing Team')
+
+
+
+
 
 
 

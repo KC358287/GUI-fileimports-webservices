@@ -3,14 +3,15 @@
 
 import threading
 from PyQt5 import QtGui, QtWidgets, QtCore
-from SqlConnection import DqConnection
 import pyodbc
 
 
+
 class Files(QtWidgets.QWidget):
-    def __init__(self, parent = None):
-        super(Files, self).__init__(parent)
+    def __init__(self):
+        super().__init__()
         self.layout_init()
+        self._credentials = ''
 
     def layout_init(self):
         operator = ['TMobile', 'PLK', 'Play', 'Orange']
@@ -76,6 +77,9 @@ class Files(QtWidgets.QWidget):
         grid.addWidget(self.tablewidget)
         self.setLayout(grid)
 
+    def setCredentials(self, credentials):
+        self._credentials = credentials
+
     def update_textbox(self, text):
         self.textbox.clear()
         textline = self.variants.itemText(text)
@@ -98,22 +102,19 @@ class Files(QtWidgets.QWidget):
     @QtCore.pyqtSlot(int)
     def on_itemSelected(self, index):
         if isinstance(index, QtWidgets.QAbstractButton):
-            self.worker = None
-            self.workeradd = None
+            self.base = None
             element = '{}'.format(index.text())
             if element == 'Play':
-                self.worker = 'W2_FileImportWorkerP4'
+                self.base = 'W2_FileImportWorkerP4'
             elif element == 'TMobile':
-                self.worker = 'W2_FileImportWorkerTmobileFIX'
-                self.workeradd = 'W2_FileImportWorkerTmobile'
+                self.base= 'W2_FileImportWorkerTmobileFIX'
             elif element == 'Orange':
-                self.worker = 'W2_FileImportWorkerOCP'
+                self.base = 'W2_FileImportWorkerOCP'
             elif element == 'PLK':
-                self.worker = 'W2_FileImportWorkerPLK'
-            return self.worker, self.workeradd
+                self.base = 'W2_FileImportWorkerPLK'
+            return self.base
         elif isinstance(index, int):
             pass
-
 
     @QtCore.pyqtSlot()
     def disableButton(self):
@@ -148,9 +149,6 @@ class Files(QtWidgets.QWidget):
         self.tablewidget.setRowCount(0)
         self.tablewidget.setColumnWidth(3, 200)
 
-    def setCredentials(self, credentials):
-        self._credentials = credentials
-
     def table_performance(self):
         self.tablewidget.resizeColumnsToContents()
         self.tablewidget.setColumnWidth(4, 2500)
@@ -181,51 +179,54 @@ class Files(QtWidgets.QWidget):
 
     def sql_query(self):
         ser = '10.96.5.17\dqinstance'
-        imei = '%' + self.textbox.text() + '%'
+        print(self._credentials) #check
         username, pwd = self._credentials
+        imei = '%' + self.textbox.text() + '%'
         self.clear_items()
         try:
             self.disablesql()
             connection = pyodbc.connect(driver='{SQL Server}', server=ser,
                                         user=username, password=pwd)
-            if self.worker == 'W2_FileImportWorkerTmobileFIX':
+            if self.base == 'W2_FileImportWorkerTmobileFIX':
                 cursor = connection.cursor()
-                res = cursor.execute(''' SELECT FI.FileNameOriginal,
+                res = cursor.execute(''' 
+                                                    SELECT FI.FileNameOriginal,
                                                     FI.OrderItemCode,
                                                     FIR.Imported,
                                                     FIRI.InfoCode,
                                                     FR.Row
-                                                    FROM [FileImports] AS FI
-                                                    JOIN [FileImportRows] AS FIR ON FI.Id = FIR.FileImportId
-                                                    JOIN [FileRows] AS FR ON FIR.RowId = FR.RowId 
-                                                    LEFT JOIN FileImportRowInfoes AS FIRI ON FR.RowId = FIRI.RowId
+                                                    FROM BIDQ_W2_DB.dbo.[FileImports] AS FI
+                                        JOIN BIDQ_W2_DB.dbo.[FileImportRows] AS FIR ON FI.Id = FIR.FileImportId
+                                        JOIN BIDQ_W2_DB.dbo.[FileRows] AS FR ON FIR.RowId = FR.RowId 
+                                        LEFT JOIN BIDQ_W2_DB.dbo.FileImportRowInfoes AS FIRI ON FR.RowId = FIRI.RowId
                                                     WHERE (FI.WorkerCode = ? or FI.WorkerCode = ?) and FR.Row LIKE ? ''',
-                                     (self.worker, self.workeradd, imei))
+                                     (self.base, self.base, imei))
 
-            elif self.worker == 'All':
+            elif self.base == 'All':
                 cursor = connection.cursor()
                 res = cursor.execute(''' SELECT FI.FileNameOriginal,
                                         FI.OrderItemCode,
                                         FIR.Imported,
                                         FIRI.InfoCode,
                                         FR.Row
-                                        FROM [FileImports] AS FI
-                                        JOIN [FileImportRows] AS FIR ON FI.Id = FIR.FileImportId
-                                        JOIN [FileRows] AS FR ON FIR.RowId = FR.RowId 
-                                        LEFT JOIN FileImportRowInfoes AS FIRI ON FR.RowId = FIRI.RowId
+                                        FROM BIDQ_W2_DB.dbo.[FileImports] AS FI
+                                        JOIN BIDQ_W2_DB.dbo.[FileImportRows] AS FIR ON FI.Id = FIR.FileImportId
+                                        JOIN BIDQ_W2_DB.dbo.[FileRows] AS FR ON FIR.RowId = FR.RowId 
+                                        LEFT JOIN BIDQ_W2_DB.dbo.FileImportRowInfoes AS FIRI ON FR.RowId = FIRI.RowId
                                         WHERE FR.Row LIKE ? ''',(imei))
             else:
                 cursor = connection.cursor()
-                res = cursor.execute(''' SELECT FI.FileNameOriginal,
+                res = cursor.execute('''
+                                        SELECT FI.FileNameOriginal,
                                         FI.OrderItemCode,
                                         FIR.Imported,
                                         FIRI.InfoCode,
                                         FR.Row
-                                        FROM [FileImports] AS FI
-                                        JOIN [FileImportRows] AS FIR ON FI.Id = FIR.FileImportId
-                                        JOIN [FileRows] AS FR ON FIR.RowId = FR.RowId 
-                                        LEFT JOIN FileImportRowInfoes AS FIRI ON FR.RowId = FIRI.RowId
-                                        WHERE FI.WorkerCode =  ? and FR.Row LIKE ? ''', (self.worker, imei))
+                                        FROM BIDQ_W2_DB.dbo.[FileImports] AS FI
+                                        JOIN BIDQ_W2_DB.dbo.[FileImportRows] AS FIR ON FI.Id = FIR.FileImportId
+                                        JOIN BIDQ_W2_DB.dbo.[FileRows] AS FR ON FIR.RowId = FR.RowId 
+                                        LEFT JOIN BIDQ_W2_DB.dbo.FileImportRowInfoes AS FIRI ON FR.RowId = FIRI.RowId
+                                        WHERE FI.WorkerCode =  ? and FR.Row LIKE ? ''', (self.base, imei))
 
             if not cursor.rowcount:
                 QtCore.QMetaObject.invokeMethod(self, 'show_warning',
