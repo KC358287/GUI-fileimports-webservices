@@ -12,7 +12,6 @@ class MainWindow(QtWidgets.QMainWindow):
         super().__init__()
 
         self.task_bar()
-        self.tab_layout()
         self.graph_elements()
         self.center()
 
@@ -21,7 +20,7 @@ class MainWindow(QtWidgets.QMainWindow):
         exitAct = QtWidgets.QAction('&Exit', self, shortcut='Ctrl+Q', statusTip='Exit application')
         exitAct.triggered.connect(self.close)
         moreinfo = QtWidgets.QAction('&Help', self, statusTip='More information')
-        moreinfo.triggered.connect(self.information)
+       # moreinfo.triggered.connect(self.information)
 
         ### menubar
         menubar = self.menuBar()
@@ -36,9 +35,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setWindowIcon(QtGui.QIcon('dc1.png'))
         self.setStyleSheet((qdarkstyle.load_stylesheet_pyqt5()))
 
-    def tab_layout(self):
+    def tab(self, credentials):
         self.tabwidget = QtWidgets.QTabWidget()
-        self.tabwidget.addTab(Files(), 'Files Import')
+        self.tabwidget.addTab(Files(credentials), 'Files Import')
         self.tabwidget.addTab(Webservices(), 'Webservice')
         self.setCentralWidget(self.tabwidget)
 
@@ -53,6 +52,10 @@ class MainWindow(QtWidgets.QMainWindow):
         QtWidgets.QMessageBox.information(self,'Information','Version: 2.0\n'\
                                             'Please, contact karol.chojnowski@digitalcaregroup.com for comments and suggestions\n\n'\
                                           'Digital Care - Data Processing Team')
+
+  #  def setCredentials(self, credentials):
+       # self._credentials = credentials
+       # return self._credentials[0][0], self._credentials[0][1]
 
 
 
