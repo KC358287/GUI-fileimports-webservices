@@ -8,10 +8,10 @@ import pyodbc
 
 
 class Files(QtWidgets.QWidget):
-    def __init__(self):
+    def __init__(self,credentials):
         super().__init__()
         self.layout_init()
-        self._credentials = ''
+        self._credentials = credentials
 
     def layout_init(self):
         operator = ['TMobile', 'PLK', 'Play', 'Orange']
@@ -76,9 +76,6 @@ class Files(QtWidgets.QWidget):
         grid.addLayout(mainpanel)
         grid.addWidget(self.tablewidget)
         self.setLayout(grid)
-
-    def setCredentials(self, credentials):
-        self._credentials = credentials
 
     def update_textbox(self, text):
         self.textbox.clear()
@@ -179,7 +176,6 @@ class Files(QtWidgets.QWidget):
 
     def sql_query(self):
         ser = '10.96.5.17\dqinstance'
-        print(self._credentials) #check
         username, pwd = self._credentials
         imei = '%' + self.textbox.text() + '%'
         self.clear_items()
