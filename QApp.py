@@ -16,13 +16,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.center()
 
     def task_bar(self):
-        ### actions on meenubar
         exitAct = QtWidgets.QAction('&Exit', self, shortcut='Ctrl+Q', statusTip='Exit application')
         exitAct.triggered.connect(self.close)
         moreinfo = QtWidgets.QAction('&Help', self, statusTip='More information')
-       # moreinfo.triggered.connect(self.information)
+        moreinfo.triggered.connect(self.information)
 
-        ### menubar
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&File')
         fileMenu.addAction(exitAct)
@@ -30,7 +28,6 @@ class MainWindow(QtWidgets.QMainWindow):
         fileMenu.addAction(moreinfo)
 
     def graph_elements(self):
-        ### basic geometry and color
         self.setWindowTitle('Villain')
         self.setWindowIcon(QtGui.QIcon('dc1.png'))
         self.setStyleSheet((qdarkstyle.load_stylesheet_pyqt5()))
@@ -41,7 +38,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tabwidget.addTab(Webservices(), 'Webservice')
         self.setCentralWidget(self.tabwidget)
 
-    ### center main window
     def center(self):
         qr = self.frameGeometry()
         cp = QtWidgets.QDesktopWidget().availableGeometry().center()
@@ -52,11 +48,6 @@ class MainWindow(QtWidgets.QMainWindow):
         QtWidgets.QMessageBox.information(self,'Information','Version: 2.0\n'\
                                             'Please, contact karol.chojnowski@digitalcaregroup.com for comments and suggestions\n\n'\
                                           'Digital Care - Data Processing Team')
-
-  #  def setCredentials(self, credentials):
-       # self._credentials = credentials
-       # return self._credentials[0][0], self._credentials[0][1]
-
 
 
 
