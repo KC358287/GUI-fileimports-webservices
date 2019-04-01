@@ -4,7 +4,6 @@ import sys
 from PyQt5 import QtWidgets,QtGui
 from QLogin import LoginDialog
 from QApp import MainWindow
-from QFilesTab import Files
 import os
 
 
@@ -24,11 +23,10 @@ if __name__ == '__main__':
     if login.exec_() != QtWidgets.QDialog.Accepted:
         sys.exit(-1)
 
-    files = Files()
     window = MainWindow()
     window.setWindowIcon(QtGui.QIcon(resource_path('dc1.png')))
     window.setGeometry(500, 150, 800, 500)
-    files.setCredentials(login.credentials())
+    window.tab(login.credentials())
     window.show()
     sys.exit(app.exec_())
 
