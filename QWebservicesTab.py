@@ -4,8 +4,6 @@
 from PyQt5 import QtWidgets, QtCore
 import pyodbc
 import threading
-import time
-
 
 
 '''
@@ -58,7 +56,7 @@ class Webservices(QtWidgets.QWidget):
 
         self.pb = QtWidgets.QPushButton(self.tr('Run process'))
         self.pb.setDisabled(True)
-        self.textbox.textChanged.connect(self.disableButton)
+        self.textbox.textChanged.connect(self.disable_button)
         self.pb.clicked.connect(self.on_clicked_pb)
         self.clearbutton = QtWidgets.QPushButton(self.tr('Clear all'))
         self.clearbutton.setDisabled(True)
@@ -98,26 +96,24 @@ class Webservices(QtWidgets.QWidget):
     @QtCore.pyqtSlot()
     def toggle_checkbox(self):
         self.toggle = not self.toggle
-        self.b1.setChecked(self.toggle)
-        self.b2.setChecked(not self.toggle)
+        self.b1.setChecked(self.toggle), self.b2.setChecked(not self.toggle)
 
     @QtCore.pyqtSlot()
-    def disableButton(self):
+    def disable_button(self):
         val = bool(self.textbox.text())
-        self.pb.setDisabled(not val)
-        self.clearbutton.setDisabled(not val)
+        self.pb.setDisabled(not val), self.clearbutton.setDisabled(not val)
 
     @QtCore.pyqtSlot()
-    def disablesql(self):
+    def disable_widgets(self):
         self.textbox.setDisabled(True)
-        self.pb.setDisabled(True)
-        self.clearbutton.setDisabled(True)
+        self.pb.setDisabled(True) ,self.clearbutton.setDisabled(True)
+        self.b1.setDisabled(True), self.b2.setDisabled(True)
 
     @QtCore.pyqtSlot()
-    def enablesql(self):
+    def enable_widgets(self):
         self.textbox.setDisabled(False)
-        self.pb.setDisabled(False)
-        self.clearbutton.setDisabled(False)
+        self.pb.setDisabled(False), self.clearbutton.setDisabled(False)
+        self.b1.setDisabled(False), self.b2.setDisabled(False)
 
     @QtCore.pyqtSlot()
     def on_clicked_clear(self):
@@ -131,6 +127,7 @@ class Webservices(QtWidgets.QWidget):
         if self.textbox.text():
             threading.Thread(target=self.sql_query, daemon=True).start()
 
+    @QtCore.pyqtSlot()
     def table_performance(self):
         #self.tablewidget.resizeColumnsToContents()
         #self.tablewidget.setColumnWidth(4, 2500)
@@ -165,21 +162,24 @@ class Webservices(QtWidgets.QWidget):
 
     @QtCore.pyqtSlot()
     def replace_widgets(self):
-        self.topbot.replaceWidget(self.progressBar,self.pb)
+        self.topbot.removeWidget(self.progressBar)
+        self.progressBar.setParent(None)
+        self.topbot.addWidget(self.pb)
 
 
     def sql_query(self):
         ser = '10.96.5.17\dqinstance'
+        noel = 0
         username, pwd = self._credentials
         value = self.textbox.text()
         self.clear_items()
         try:
-            self.disablesql()
+            self.disable_widgets()
             connection = pyodbc.connect(driver='{SQL Server}', server=ser,
                                         user=username, password=pwd)
             if self.b1.isChecked() == True:
-                QtCore.QMetaObject.invokeMethod(self, 'make_progressbar',QtCore.Qt.QueuedConnection)
                 cursor = connection.cursor()
+                QtCore.QMetaObject.invokeMethod(self, 'make_progressbar', QtCore.Qt.QueuedConnection)
                 res = cursor.execute(''' 
                                     SELECT distinct
                                         a.RequestKey,
@@ -196,8 +196,8 @@ class Webservices(QtWidgets.QWidget):
                     order by a.datecreate
                     ''', (value))
             else:
-                self.make_progressbar()
                 cursor = connection.cursor()
+                QtCore.QMetaObject.invokeMethod(self, 'make_progressbar',QtCore.Qt.QueuedConnection)
                 res = cursor.execute(''' 
                                         SELECT distinct
                                             a.RequestKey,
@@ -210,15 +210,17 @@ class Webservices(QtWidgets.QWidget):
                                                     FROM CleaningRequests.dbo.InsuranceRequests a
                                     INNER JOIN CleaningRequests.dbo.InsuranceRequestTokens b ON a.id = b.id
                                     LEFT JOIN BIDQ_W2_DB.dbo.InsuranceRequestInfoes c ON a.RequestKey = c.RequestKey
-                                    WHERE b.TokenValue = ? and a.Appinstance <> 'CoreSaleService'
+                                    WHERE b.TokenValue like ? and a.Appinstance <> 'CoreSaleService'
                                     order by a.datecreate
                                     ''', (value))
+            QtCore.QMetaObject.invokeMethod(self, 'replace_widgets', QtCore.Qt.QueuedConnection)
             if not cursor.rowcount:
                 QtCore.QMetaObject.invokeMethod(self, 'show_warning',
                                                 QtCore.Qt.QueuedConnection,
                                                 QtCore.Q_ARG(str, 'IMEI'), QtCore.Q_ARG(str, 'No items found'))
             else:
-                QtCore.QMetaObject.invokeMethod(self, 'clear_items', QtCore.Qt.QueuedConnection)
+                QtCore.QMetaObject.invokeMethod(self, 'clear_items',
+                                                QtCore.Qt.QueuedConnection)
                 QtCore.QThread.msleep(10)
                 for row, form in enumerate(res):
                     for column, item in enumerate(form):
@@ -227,18 +229,24 @@ class Webservices(QtWidgets.QWidget):
                                                         QtCore.Q_ARG(int, row), QtCore.Q_ARG(int, column),
                                                         QtCore.Q_ARG(str, str(item)))
                         QtCore.QThread.msleep(10)
-                self.table_performance()
+                    noel += 1
+                QtCore.QMetaObject.invokeMethod(self, 'table_performance',
+                                                QtCore.Qt.QueuedConnection)
+                if noel == 1:
+                    itemsfound = ' item found'
+                else:
+                    itemsfound = ' items found'
+                noel = str(noel) + itemsfound
                 QtCore.QMetaObject.invokeMethod(self, 'show_ok',
                                                 QtCore.Qt.QueuedConnection,
-                                                QtCore.Q_ARG(str, 'Done'), QtCore.Q_ARG(str, 'Items found'))
+                                                QtCore.Q_ARG(str, 'Done'), QtCore.Q_ARG(str, noel))
             cursor.close()
-            QtCore.QMetaObject.invokeMethod(self, 'replace_widgets', QtCore.Qt.QueuedConnection)
         except:
                 QtCore.QMetaObject.invokeMethod(self, 'show_warning',
                                                 QtCore.Qt.QueuedConnection,
                                                 QtCore.Q_ARG(str, 'Error'), QtCore.Q_ARG(str, 'Something went wrong\n\n' \
                                                                                               'Contact karol.chojnowski@digitalcaregroup.com'))
-        self.enablesql()
+        self.enable_widgets()
 
 
 
