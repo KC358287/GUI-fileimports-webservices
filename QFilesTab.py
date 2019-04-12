@@ -12,9 +12,11 @@ class Files(QtWidgets.QWidget):
         super().__init__()
         self.layout_init()
         self._credentials = credentials
+        self.ser = '10.96.5.17\dqinstance'
+        self.username, pwd = self._credentials
 
     def layout_init(self):
-        operator = ['TMobile', 'PLK', 'Play', 'Orange']
+        operator = ['Orange','Play', 'PLK', 'TMobile']
         variant = ['Select variant', 'Numer usługi/polisy', 'IMEI', 'PESEL', 'NIP',
                     'REGON', 'Nazwisko', 'Nazwa firmy']
         ###partners
@@ -63,8 +65,8 @@ class Files(QtWidgets.QWidget):
         variantpanel = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.TopToBottom)
         variantpanel.addWidget(self.variants)
         variantpanel.addWidget(self.textbox)
-        variantpanel.addWidget(self.pb)
         variantpanel.addWidget(self.clearbutton)
+        variantpanel.addWidget(self.pb)
         mainpanel.addWidget(pgroupbox)
         mainpanel.addWidget(vgroupbox)
         vgroupbox.setLayout(variantpanel)
@@ -73,9 +75,32 @@ class Files(QtWidgets.QWidget):
         pgroupbox.setLayout(test)
 
         grid = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.TopToBottom, self)
+        grid.addLayout(self.create_layout_label())
         grid.addLayout(mainpanel)
         grid.addWidget(self.tablewidget)
         self.setLayout(grid)
+
+    def create_layout_label(self):
+        label1 = QtWidgets.QLabel()
+        label2 = QtWidgets.QLabel()
+        label3 = QtWidgets.QLabel()
+        label4 = QtWidgets.QLabel()
+        label1.setText('Orange:')
+        label2.setText('Play:')
+        label3.setText('PLK:')
+        label4.setText('TMobile:')
+        self.panel = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.LeftToRight)
+        self.panel.addWidget(label1),self.panel.addWidget(label2),\
+        self.panel.addWidget(label3),self.panel.addWidget(label4)
+        return self.panel
+
+    '''
+    def actually_date(self):
+        connection = pyodbc.connect(driver='{SQL Server}', server=self.ser,
+                                    user=self.username, password=self.pwd)'''
+
+
+
 
     def update_textbox(self, text):
         self.textbox.clear()
@@ -175,14 +200,12 @@ class Files(QtWidgets.QWidget):
         self.tablewidget.sortItems(0, order=QtCore.Qt.DescendingOrder)
 
     def sql_query(self):
-        ser = '10.96.5.17\dqinstance'
-        username, pwd = self._credentials
         imei = '%' + self.textbox.text() + '%'
         self.clear_items()
         try:
             self.disablesql()
-            connection = pyodbc.connect(driver='{SQL Server}', server=ser,
-                                        user=username, password=pwd)
+            connection = pyodbc.connect(driver='{SQL Server}', server=self.ser,
+                                        user=self.username, password=self.pwd)
             if self.base == 'W2_FileImportWorkerTmobileFIX':
                 cursor = connection.cursor()
                 res = cursor.execute(''' 
