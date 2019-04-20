@@ -4,6 +4,7 @@
 from PyQt5 import QtWidgets, QtCore
 import pyodbc
 import threading
+import time
 
 
 '''
@@ -45,9 +46,9 @@ class Webservices(QtWidgets.QWidget):
 
         self.tablewidget = QtWidgets.QTableWidget()
         self.tablewidget.setColumnCount(7)
-        self.tablewidget.setHorizontalHeaderLabels(['RequestKey','AppInstance','Content', \
-                                                    'StatusCode', 'RequestAction', 'DateCreate', \
-                                                    'ErrorCode'])
+        self.tablewidget.setHorizontalHeaderLabels(['RequestKey', 'AppInstance',' DateCreate',
+                                                    'StatusCode', 'RequestAction',' ErrorCode',
+                                                    'Content'])
         self.tablewidget.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
         self.tablewidget.horizontalHeader().setStretchLastSection(True)
         self.tablewidget.resizeColumnsToContents()
@@ -120,7 +121,6 @@ class Webservices(QtWidgets.QWidget):
         if self.textbox.text():
             self.textbox.clear()
         self.tablewidget.setRowCount(0)
-        self.tablewidget.setColumnWidth(3, 200)
 
     @QtCore.pyqtSlot()
     def on_clicked_pb(self):
@@ -129,8 +129,8 @@ class Webservices(QtWidgets.QWidget):
 
     @QtCore.pyqtSlot()
     def table_performance(self):
-        #self.tablewidget.resizeColumnsToContents()
-        #self.tablewidget.setColumnWidth(4, 2500)
+        self.tablewidget.resizeColumnsToContents()
+        self.tablewidget.setColumnWidth(7, 2500)
         self.tablewidget.setHorizontalScrollMode(QtWidgets.QAbstractItemView.ScrollPerPixel)
 
     @QtCore.pyqtSlot(str, str)
@@ -181,33 +181,33 @@ class Webservices(QtWidgets.QWidget):
                 cursor = connection.cursor()
                 QtCore.QMetaObject.invokeMethod(self, 'make_progressbar', QtCore.Qt.QueuedConnection)
                 res = cursor.execute(''' 
-                                    SELECT distinct
-                                        a.RequestKey,
-                                        a.AppInstance,
-                                        a.DQContent as Content,
-                                        a.StatusCode,
-                                        a.RequestAction,
-                                        a.DateCreate,
-                                        ISNULL(c.InfoCode, '-') as ErrorCode
-                                    FROM CleaningRequests.dbo.InsuranceRequests a
-                    INNER JOIN CleaningRequests.dbo.InsuranceRequestTokens b ON a.id = b.id
-                    LEFT JOIN BIDQ_W2_DB.dbo.InsuranceRequestInfoes c ON a.RequestKey = c.RequestKey
-                    WHERE b.TokenValue = ? and a.Appinstance <> 'CoreSaleService'
-                    order by a.datecreate
+                                    SELECT 
+                                            a.RequestKey,
+                                            a.AppInstance,
+                                            CAST(a.DateCreate as smalldatetime) as DateCreate,
+                                            a.StatusCode,
+                                            a.RequestAction,
+                                            ISNULL(c.InfoCode, '-') as ErrorCode,
+                                            a.DQContent as Content   
+                                        FROM CleaningRequests.dbo.InsuranceRequests a
+                                    INNER JOIN CleaningRequests.dbo.InsuranceRequestTokens b ON a.id = b.id
+                                    LEFT JOIN BIDQ_W2_DB.dbo.InsuranceRequestInfoes c ON a.RequestKey = c.RequestKey
+                                    WHERE b.TokenValue = ? and a.Appinstance <> 'CoreSaleService'
+                                    order by a.datecreate
                     ''', (value))
             else:
                 cursor = connection.cursor()
                 QtCore.QMetaObject.invokeMethod(self, 'make_progressbar',QtCore.Qt.QueuedConnection)
                 res = cursor.execute(''' 
-                                        SELECT distinct
+                                        SELECT 
                                             a.RequestKey,
-                                            a.AppInstance,
-                                            a.DQContent as Content,
-                                            a.StatusCode,
-                                            a.RequestAction,
-                                                        a.DateCreate,
-                                                        ISNULL(c.InfoCode, '-') as ErrorCode
-                                                    FROM CleaningRequests.dbo.InsuranceRequests a
+                                            a.AppInstance,
+                                            CAST(a.DateCreate as smalldatetime) as DateCreate,
+                                            a.StatusCode,
+                                            a.RequestAction,
+                                            ISNULL(c.InfoCode, '-') as ErrorCode,
+                                            a.DQContent as Content   
+                                        FROM CleaningRequests.dbo.InsuranceRequests a
                                     INNER JOIN CleaningRequests.dbo.InsuranceRequestTokens b ON a.id = b.id
                                     LEFT JOIN BIDQ_W2_DB.dbo.InsuranceRequestInfoes c ON a.RequestKey = c.RequestKey
                                     WHERE b.TokenValue like ? and a.Appinstance <> 'CoreSaleService'
@@ -217,7 +217,7 @@ class Webservices(QtWidgets.QWidget):
             if not cursor.rowcount:
                 QtCore.QMetaObject.invokeMethod(self, 'show_warning',
                                                 QtCore.Qt.QueuedConnection,
-                                                QtCore.Q_ARG(str, 'IMEI'), QtCore.Q_ARG(str, 'No items found'))
+                                                QtCore.Q_ARG(str, 'Webservice'), QtCore.Q_ARG(str, 'No items found'))
             else:
                 QtCore.QMetaObject.invokeMethod(self, 'clear_items',
                                                 QtCore.Qt.QueuedConnection)
@@ -239,13 +239,13 @@ class Webservices(QtWidgets.QWidget):
                 noel = str(noel) + itemsfound
                 QtCore.QMetaObject.invokeMethod(self, 'show_ok',
                                                 QtCore.Qt.QueuedConnection,
-                                                QtCore.Q_ARG(str, 'Done'), QtCore.Q_ARG(str, noel))
+                                                QtCore.Q_ARG(str, 'Webservice'), QtCore.Q_ARG(str, noel))
             cursor.close()
         except:
                 QtCore.QMetaObject.invokeMethod(self, 'show_warning',
                                                 QtCore.Qt.QueuedConnection,
-                                                QtCore.Q_ARG(str, 'Error'), QtCore.Q_ARG(str, 'Something went wrong\n\n' \
-                                                                                              'Contact karol.chojnowski@digitalcaregroup.com'))
+                                                QtCore.Q_ARG(str, 'Webservice'), QtCore.Q_ARG(str, 'Something went wrong\n\n' \
+                                                                                              'Contact Data Processing Team'))
         self.enable_widgets()
 
 
