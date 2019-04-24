@@ -2,35 +2,9 @@
 # -*- coding: utf-8 -*-
 
 from PyQt5 import QtWidgets, QtCore
+from Model import TableModelW
 import pyodbc
 import threading
-import time
-
-
-'''
-#performance qtablewidget
-class TableModel(QtCore.QAbstractTableModel):
-    def __init__(self, data, parent = None):
-        super(TableModel, self).__init__(parent)
-        self._data = data
-
-    def rowCount(self, parent=None):
-        return len(self._data)
-
-    def columnCount(self, parent=None):
-        return len(self._data[0]) if self.rowCount() else 0
-
-    def data(self, index, role=QtCore.Qt.DisplayRole):
-        if role == QtCore.Qt.DisplayRole:
-            row = index.row()
-            if 0 <= row < self.rowCount():
-                column = index.column()
-                if 0 <= column < self.columnCount():
-                    return self._data[row][column]
-
-'''
-
-
 
 
 class Webservices(QtWidgets.QWidget):
@@ -44,16 +18,7 @@ class Webservices(QtWidgets.QWidget):
         self.name_f = QtWidgets.QLabel('Enter value:')
         self.textbox = QtWidgets.QLineEdit()
 
-        self.tablewidget = QtWidgets.QTableWidget()
-        self.tablewidget.setColumnCount(7)
-        self.tablewidget.setHorizontalHeaderLabels(['RequestKey', 'AppInstance',' DateCreate',
-                                                    'StatusCode', 'RequestAction',' ErrorCode',
-                                                    'Content'])
-        self.tablewidget.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
-        self.tablewidget.horizontalHeader().setStretchLastSection(True)
-        self.tablewidget.resizeColumnsToContents()
-        self.tablewidget.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
-        self.tablewidget.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.tablewidget = QtWidgets.QTableView()
 
         self.pb = QtWidgets.QPushButton(self.tr('Run process'))
         self.pb.setDisabled(True)
@@ -116,41 +81,39 @@ class Webservices(QtWidgets.QWidget):
         self.pb.setDisabled(False), self.clearbutton.setDisabled(False)
         self.b1.setDisabled(False), self.b2.setDisabled(False)
 
-    @QtCore.pyqtSlot()
-    def on_clicked_clear(self):
-        if self.textbox.text():
-            self.textbox.clear()
-        self.tablewidget.setRowCount(0)
 
     @QtCore.pyqtSlot()
     def on_clicked_pb(self):
         if self.textbox.text():
             threading.Thread(target=self.sql_query, daemon=True).start()
 
-    @QtCore.pyqtSlot()
-    def table_performance(self):
-        self.tablewidget.resizeColumnsToContents()
-        self.tablewidget.setColumnWidth(7, 2500)
-        self.tablewidget.setHorizontalScrollMode(QtWidgets.QAbstractItemView.ScrollPerPixel)
-
     @QtCore.pyqtSlot(str, str)
     def show_warning(self, title, msg):
         QtWidgets.QMessageBox.information(self, title, msg)
 
-    @QtCore.pyqtSlot(str, str)
-    def show_ok(self, title, msg):
-        QtWidgets.QMessageBox.information(self, title ,msg)
+    @QtCore.pyqtSlot(str, int)
+    def show_ok(self, title, rows):
+        if rows == 1:
+            itemsfound = ' item found'
+        else:
+            itemsfound = ' items found'
+        rows = str(rows) + itemsfound
+        QtWidgets.QMessageBox.information(self, title ,rows)
 
     @QtCore.pyqtSlot()
     def clear_items(self):
-        self.tablewidget.setRowCount(0)
+        self.tablewidget.setModel(None)
 
-    @QtCore.pyqtSlot(int, int, str)
-    def add_item(self, row, column, val):
-        if row >= self.tablewidget.rowCount():
-            self.tablewidget.insertRow(self.tablewidget.rowCount())
-        newitem = QtWidgets.QTableWidgetItem(val)
-        self.tablewidget.setItem(row, column, newitem)
+    @QtCore.pyqtSlot()
+    def on_clicked_clear(self):
+        if self.textbox.text():
+            self.textbox.clear()
+        self.tablewidget.setModel(None)
+
+    @QtCore.pyqtSlot()
+    def table_performance(self):
+        self.tablewidget.resizeColumnsToContents()
+        self.tablewidget.setHorizontalScrollMode(QtWidgets.QAbstractItemView.ScrollPerPixel)
 
     @QtCore.pyqtSlot()
     def make_progressbar(self):
@@ -166,13 +129,16 @@ class Webservices(QtWidgets.QWidget):
         self.progressBar.setParent(None)
         self.topbot.addWidget(self.pb)
 
+    @QtCore.pyqtSlot()
+    def create_tableview(self):
+        model = TableModelW(self.data)
+        self.tablewidget.setModel(model)
 
     def sql_query(self):
         ser = '10.96.5.17\dqinstance'
-        noel = 0
         username, pwd = self._credentials
         value = self.textbox.text()
-        self.clear_items()
+        QtCore.QMetaObject.invokeMethod(self, 'clear_items', QtCore.Qt.QueuedConnection)
         try:
             self.disable_widgets()
             connection = pyodbc.connect(driver='{SQL Server}', server=ser,
@@ -182,9 +148,8 @@ class Webservices(QtWidgets.QWidget):
                 QtCore.QMetaObject.invokeMethod(self, 'make_progressbar', QtCore.Qt.QueuedConnection)
                 res = cursor.execute(''' 
                                     SELECT 
-                                            a.RequestKey,
                                             a.AppInstance,
-                                            CAST(a.DateCreate as smalldatetime) as DateCreate,
+                                            a.DateCreate,
                                             a.StatusCode,
                                             a.RequestAction,
                                             ISNULL(c.InfoCode, '-') as ErrorCode,
@@ -195,14 +160,14 @@ class Webservices(QtWidgets.QWidget):
                                     WHERE b.TokenValue = ? and a.Appinstance <> 'CoreSaleService'
                                     order by a.datecreate
                     ''', (value))
+
             else:
                 cursor = connection.cursor()
                 QtCore.QMetaObject.invokeMethod(self, 'make_progressbar',QtCore.Qt.QueuedConnection)
                 res = cursor.execute(''' 
                                         SELECT 
-                                            a.RequestKey,
                                             a.AppInstance,
-                                            CAST(a.DateCreate as smalldatetime) as DateCreate,
+                                            a.DateCreate,
                                             a.StatusCode,
                                             a.RequestAction,
                                             ISNULL(c.InfoCode, '-') as ErrorCode,
@@ -213,45 +178,34 @@ class Webservices(QtWidgets.QWidget):
                                     WHERE b.TokenValue like ? and a.Appinstance <> 'CoreSaleService'
                                     order by a.datecreate
                                     ''', (value))
-            QtCore.QMetaObject.invokeMethod(self, 'replace_widgets', QtCore.Qt.QueuedConnection)
             if not cursor.rowcount:
+                QtCore.QMetaObject.invokeMethod(self, 'replace_widgets',
+                                                QtCore.Qt.QueuedConnection)
                 QtCore.QMetaObject.invokeMethod(self, 'show_warning',
                                                 QtCore.Qt.QueuedConnection,
                                                 QtCore.Q_ARG(str, 'Webservice'), QtCore.Q_ARG(str, 'No items found'))
             else:
                 QtCore.QMetaObject.invokeMethod(self, 'clear_items',
                                                 QtCore.Qt.QueuedConnection)
-                QtCore.QThread.msleep(10)
-                for row, form in enumerate(res):
-                    for column, item in enumerate(form):
-                        QtCore.QMetaObject.invokeMethod(self, 'add_item',
-                                                        QtCore.Qt.QueuedConnection,
-                                                        QtCore.Q_ARG(int, row), QtCore.Q_ARG(int, column),
-                                                        QtCore.Q_ARG(str, str(item)))
-                        QtCore.QThread.msleep(10)
-                    noel += 1
+                self.data = res.fetchall()
+                rows = len(self.data)
+                QtCore.QMetaObject.invokeMethod(self, 'create_tableview',
+                                                QtCore.Qt.QueuedConnection)
                 QtCore.QMetaObject.invokeMethod(self, 'table_performance',
                                                 QtCore.Qt.QueuedConnection)
-                if noel == 1:
-                    itemsfound = ' item found'
-                else:
-                    itemsfound = ' items found'
-                noel = str(noel) + itemsfound
+                QtCore.QMetaObject.invokeMethod(self, 'replace_widgets',
+                                                QtCore.Qt.QueuedConnection)
                 QtCore.QMetaObject.invokeMethod(self, 'show_ok',
                                                 QtCore.Qt.QueuedConnection,
-                                                QtCore.Q_ARG(str, 'Webservice'), QtCore.Q_ARG(str, noel))
+                                                QtCore.Q_ARG(str, 'Webservice'), QtCore.Q_ARG(int, rows))
             cursor.close()
         except:
+                QtCore.QMetaObject.invokeMethod(self, 'replace_widgets', QtCore.Qt.QueuedConnection)
                 QtCore.QMetaObject.invokeMethod(self, 'show_warning',
                                                 QtCore.Qt.QueuedConnection,
                                                 QtCore.Q_ARG(str, 'Webservice'), QtCore.Q_ARG(str, 'Something went wrong\n\n' \
                                                                                               'Contact Data Processing Team'))
         self.enable_widgets()
-
-
-
-
-
 
 
 
