@@ -3,13 +3,14 @@
 
 import threading
 from PyQt5 import QtGui, QtWidgets, QtCore
+from Model import TableModelF
 import pyodbc
 
 
 
 class Files(QtWidgets.QWidget):
     operator = ['Orange', 'Play', 'PLK', 'TMobile']
-    variant = ['Select variant', 'InternalNnmber','MSISDN',\
+    variant = ['Select variant', 'InternalNumber','MSISDN',\
                'IMEI', 'PESEL', 'NIP',\
                'REGON', 'NAZWISKO', 'NAZWA_FIRMY']
 
@@ -45,20 +46,7 @@ class Files(QtWidgets.QWidget):
         self.variants.activated.connect(self.update_textbox)
 
         self.textbox = QtWidgets.QLineEdit()
-
-        self.tablewidget = QtWidgets.QTableWidget()
-        self.tablewidget.setColumnCount(20)
-        self.tablewidget.setHorizontalHeaderLabels(['Partner', 'FileType', 'FileName',\
-                                                    'DateCreate','Imported','InfoCode',\
-                                                    'Date AKT/DEZ', 'InternalNumber','Wariant',\
-                                                    'MSISDN','IMEI','PRODUCENT','MODEL','PESEL',\
-                                                    'NIP','REGON','Segment','Imie','Nazwisko','Nazwa Firmy'
-                                                    ])
-        self.tablewidget.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
-        self.tablewidget.horizontalHeader().setStretchLastSection(True)
-        self.tablewidget.resizeColumnsToContents()
-        self.tablewidget.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
-        self.tablewidget.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.tablewidget = QtWidgets.QTableView()
 
         self.pb = QtWidgets.QPushButton(self.tr('Run process'))
         self.pb.setDisabled(True)
@@ -166,8 +154,7 @@ class Files(QtWidgets.QWidget):
     def on_clicked_clear(self):
         if self.textbox.text():
             self.textbox.clear()
-        self.tablewidget.setRowCount(0)
-        self.tablewidget.setColumnWidth(3, 200)
+        self.tablewidget.setModel(None)
 
     @QtCore.pyqtSlot()
     def table_performance(self):
@@ -178,20 +165,18 @@ class Files(QtWidgets.QWidget):
     def show_warning(self, title, msg):
         QtWidgets.QMessageBox.information(self, title, msg)
 
-    @QtCore.pyqtSlot(str, str)
-    def show_ok(self, title, msg):
-        QtWidgets.QMessageBox.information(self, title ,msg)
+    @QtCore.pyqtSlot(str, int)
+    def show_ok(self, title, rows):
+        if rows == 1:
+            itemsfound = ' item found'
+        else:
+            itemsfound = ' items found'
+        rows = str(rows) + itemsfound
+        QtWidgets.QMessageBox.information(self, title, rows)
 
     @QtCore.pyqtSlot()
     def clear_items(self):
-        self.tablewidget.setRowCount(0)
-
-    @QtCore.pyqtSlot(int, int, str)
-    def add_item(self, row, column, val):
-        if row >= self.tablewidget.rowCount():
-            self.tablewidget.insertRow(self.tablewidget.rowCount())
-        newitem = QtWidgets.QTableWidgetItem(val)
-        self.tablewidget.setItem(row, column, newitem)
+        self.tablewidget.setModel(None)
 
     @QtCore.pyqtSlot()
     def make_progressbar(self):
@@ -207,12 +192,15 @@ class Files(QtWidgets.QWidget):
         self.progressBar.setParent(None)
         self.variantpanel.addWidget(self.pb)
 
+    @QtCore.pyqtSlot()
+    def create_tableview(self):
+        model = TableModelF(self.data)
+        self.tablewidget.setModel(model)
+
 
     def sql_query(self):
-        self.clear_items()
         text = self.textbox.text()
         column = self.textline
-        noel = 0
         sql = '''
         SELECT 
                [Partner]
@@ -240,7 +228,7 @@ class Files(QtWidgets.QWidget):
           ORDER BY FileDateCreate
         '''.format(column)
 
-
+        QtCore.QMetaObject.invokeMethod(self, 'clear_items', QtCore.Qt.QueuedConnection)
         try:
             self.disable_widgets()
             QtCore.QMetaObject.invokeMethod(self, 'make_progressbar', QtCore.Qt.QueuedConnection)
@@ -251,34 +239,29 @@ class Files(QtWidgets.QWidget):
             QtCore.QMetaObject.invokeMethod(self, 'replace_widgets', QtCore.Qt.QueuedConnection)
 
             if not cursor.rowcount:
+                QtCore.QMetaObject.invokeMethod(self, 'replace_widgets',
+                                                QtCore.Qt.QueuedConnection)
                 QtCore.QMetaObject.invokeMethod(self, 'show_warning',
                                                 QtCore.Qt.QueuedConnection,
                                                 QtCore.Q_ARG(str, 'Files Import'), QtCore.Q_ARG(str, 'No items found'))
             else:
                 QtCore.QMetaObject.invokeMethod(self, 'clear_items',
                                                 QtCore.Qt.QueuedConnection)
-                QtCore.QThread.msleep(10)
-                for row, form in enumerate(res):
-                    for column, item in enumerate(form):
-                        QtCore.QMetaObject.invokeMethod(self, 'add_item',
-                                                        QtCore.Qt.QueuedConnection,
-                                                        QtCore.Q_ARG(int, row), QtCore.Q_ARG(int, column),
-                                                        QtCore.Q_ARG(str, str(item)))
-                        QtCore.QThread.msleep(10)
-                    noel += 1
+                self.data = res.fetchall()
+                rows = len(self.data)
+                QtCore.QMetaObject.invokeMethod(self, 'create_tableview',
+                                                QtCore.Qt.QueuedConnection)
                 QtCore.QMetaObject.invokeMethod(self, 'table_performance',
                                                 QtCore.Qt.QueuedConnection)
-                if noel == 1:
-                    itemsfound = ' item found'
-                else:
-                    itemsfound = ' items found'
-                noel = str(noel) + itemsfound
+                QtCore.QMetaObject.invokeMethod(self, 'replace_widgets',
+                                                QtCore.Qt.QueuedConnection)
                 QtCore.QMetaObject.invokeMethod(self, 'show_ok',
                                                 QtCore.Qt.QueuedConnection,
-                                                QtCore.Q_ARG(str, 'Files Import'), QtCore.Q_ARG(str, noel))
+                                                QtCore.Q_ARG(str, 'Files Import'), QtCore.Q_ARG(int, rows))
             cursor.close()
 
         except:
+                QtCore.QMetaObject.invokeMethod(self, 'replace_widgets', QtCore.Qt.QueuedConnection)
                 QtCore.QMetaObject.invokeMethod(self, 'show_warning',
                                                 QtCore.Qt.QueuedConnection,
                                                 QtCore.Q_ARG(str, 'Files Import'), QtCore.Q_ARG(str, 'Something went wrong\n\n' \
