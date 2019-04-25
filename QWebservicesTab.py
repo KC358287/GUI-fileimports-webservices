@@ -19,6 +19,7 @@ class Webservices(QtWidgets.QWidget):
         self.textbox = QtWidgets.QLineEdit()
 
         self.tablewidget = QtWidgets.QTableView()
+        self.tablewidget.setSortingEnabled(True)
 
         self.pb = QtWidgets.QPushButton(self.tr('Run process'))
         self.pb.setDisabled(True)
@@ -80,7 +81,6 @@ class Webservices(QtWidgets.QWidget):
         self.textbox.setDisabled(False)
         self.pb.setDisabled(False), self.clearbutton.setDisabled(False)
         self.b1.setDisabled(False), self.b2.setDisabled(False)
-
 
     @QtCore.pyqtSlot()
     def on_clicked_pb(self):

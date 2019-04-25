@@ -46,7 +46,9 @@ class Files(QtWidgets.QWidget):
         self.variants.activated.connect(self.update_textbox)
 
         self.textbox = QtWidgets.QLineEdit()
+
         self.tablewidget = QtWidgets.QTableView()
+        self.tablewidget.setSortingEnabled(True)
 
         self.pb = QtWidgets.QPushButton(self.tr('Run process'))
         self.pb.setDisabled(True)

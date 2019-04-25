@@ -1,4 +1,5 @@
 from PyQt5 import QtCore
+import operator
 
 
 
@@ -38,6 +39,16 @@ class TableModelW(QtCore.QAbstractTableModel):
                 return section
         return None
 
+    def sort(self, Ncol, order):
+        try:
+            self.layoutAboutToBeChanged.emit()
+            self.__data = sorted(self.__data, key=operator.itemgetter(Ncol))
+            if order == QtCore.Qt.DescendingOrder:
+                self.__data.reverse()
+            self.layoutChanged.emit()
+        except:
+            pass
+
 
 
 class TableModelF(TableModelW):
@@ -54,7 +65,16 @@ class TableModelF(TableModelW):
         self.rowCount(parent)
         self.columnCount(parent)
         self.flags(QtCore.QModelIndex())
-        self.data(QtCore.QModelIndex(),QtCore.Qt.DisplayRole)
+
+
+
+    def data (self , index , role =  QtCore.Qt.DisplayRole):
+        i = index.row()
+        j = index.column()
+        if role == QtCore.Qt.DisplayRole:
+            return '{0}'.format(self.__data[i][j])
+        else:
+            return QtCore.QVariant()
 
     def headerData(self, section, orientation, role):
         if role == QtCore.Qt.DisplayRole:
@@ -63,3 +83,13 @@ class TableModelF(TableModelW):
             elif orientation == QtCore.Qt.Vertical:
                 return section
         return None
+
+    def sort(self, Ncol, order):
+        try:
+            self.layoutAboutToBeChanged.emit()
+            self.__data = sorted(self.__data, key=operator.itemgetter(Ncol))
+            if order == QtCore.Qt.DescendingOrder:
+                self.__data.reverse()
+            self.layoutChanged.emit()
+        except:
+            pass
